@@ -180,3 +180,22 @@ mv.setViewName("redirect:/WEB-INF/view/show.jsp"); //重定向
 # 异常处理
 
 springmvc采用的是统一全局的异常处理，把controller中所有的异常处理都集中到一个地方，采用的是aop思想
+
+使用两个注解
+
+1. @ExceptionHandler
+2. @ControllerAdvice
+
+# 拦截器
+
+拦截器需要实现HandlerInterceptor接口
+
+拦截器和过滤器类似，但侧重点不同，过滤器用来过滤请求参数，设置字符编码等工作，拦截器是拦截用户请求，做请求判断处理的，通常用来做：用户登录处理，权限检查，记录日志
+
+拦截器是全局的，可以对多个Controller做拦截
+
+拦截器执行时间：
+
+1. 在请求处理之前，也就是Controller类中的方法执行之前先被拦截
+2. 在控制器方法执行之后也会执行拦截器
+3. 在请求处理完毕后也会执行拦截器
