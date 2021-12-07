@@ -190,8 +190,6 @@ springmvc采用的是统一全局的异常处理，把controller中所有的异�
 
 拦截器需要实现HandlerInterceptor接口
 
-拦截器和过滤器类似，但侧重点不同，过滤器用来过滤请求参数，设置字符编码等工作，拦截器是拦截用户请求，做请求判断处理的，通常用来做：用户登录处理，权限检查，记录日志
-
 拦截器是全局的，可以对多个Controller做拦截
 
 拦截器执行时间：
@@ -199,3 +197,78 @@ springmvc采用的是统一全局的异常处理，把controller中所有的异�
 1. 在请求处理之前，也就是Controller类中的方法执行之前先被拦截
 2. 在控制器方法执行之后也会执行拦截器
 3. 在请求处理完毕后也会执行拦截器
+
+```java
+//有返回值，返回值为真才会进入处理器方法
+@Override
+public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    System.out.println("拦截器的preHandler()");
+
+    return true;
+}
+
+
+//在处理器方法之后执行，能够获取到处理器方法的返回值ModelAndView，可以对其修改
+@Override
+public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+    HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
+}
+
+//最后执行的方法，在请求处理完后执行，即对视图执行了forward后，一般做资源回收工作
+@Override
+public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
+}
+```
+
+多个拦截器按照web.xml中的声明顺序执行
+
+## 拦截器和过滤器
+
+1. 过滤器是Servlet中的对象，拦截器是SpringMVC框架中的对象
+2. 过滤器实现Filter接口中的对象，拦截器是实现HandlerInterceptor接口的对象
+3. 过滤器是用来设置request，response的参数和属性的，侧重对数据过滤，用来设置字符编码等；拦截器用来验证请求，能截断请求，用来登录验证，权限检查等
+4. 过滤器是在拦截器之前执行的
+5. 过滤器是Tomcat服务器创建的对象，拦截器是SpringMVC容器创建的对象
+6. 过滤器是一个执行时间点，拦截器有三个执行时间点
+7. 过滤器可以处理jsp，js，html等，拦截器是侧重拦截Controller的对象，如果请求不能被中央调度器接收，不会执行拦截器内容
+
+# SpringMVC请求处理流程
+
+## 用户发起请求
+
+## 中央调度器
+
+作用：把请求转交给处理器映射器，并将完成接下来的各个对象之间的大部分传递工作(所以称为调度器)
+
+## 处理器映射器
+
+SpringMVC框架中的一种对象，框架把实现了HandlerMapping接口的类都叫映射器
+
+作用：根据请求，从SpringMVC容器对象中获取处理器对象，框架把找到的处理器对象放到一个叫做处理器执行链的类(HandlerExecutionChain)保存
+
+## 处理器执行链
+
+类中保存着处理器对象，拦截器对象
+
+作用：把处理器对象交给处理器适配器对象(多个)
+
+## 处理器适配器
+
+实现了HandlerAdapter接口
+
+作用：执行处理器方法，即调用Controller对象的方法，得到返回值ModelAndView，将ModelAndView交给视图解析器
+
+## 视图解析器
+
+实现了ViewResolver接口，可以有多个
+
+作用：组成视图完整路径，添加前缀后缀(如果需要的话)，并创建View对象(View对象指实现View接口的对象，框架中使用它表示视图)
+
+## 视图类
+
+如InternalResourceView类用来表示jsp文件，视图解析器遇到jsp后缀的文件时，就会创建一个InternalResourceView类对象，对象内有一个属性url存储着实际地址
+
+## forward
+
+以中央调度器为首的很多对象一起完成，调用视图类自己的方法，把Model数据放入request作用域，然后执行视图的forward()方法，请求处理完毕

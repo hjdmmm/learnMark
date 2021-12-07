@@ -170,6 +170,16 @@ import放在包下面
 
 若要导入不同包的类尽量不重复类名
 
+## 命名
+
+这样命名是为了保证项目中所用到的类具有全球唯一性
+
+1. 甲方公司域名的倒序：com.xxxx
+2. 项目名称：oa
+3. 模块信息：xxx.ooo.jjj
+4. 功能顶层包：service、dao、beans、vo
+5. 实现类：impl
+
 # JavaDoc
 
 javadoc命令是用来生成自己的API文档的

@@ -732,3 +732,12 @@ id：int/bigint
 
 当对日期等计算的需求不高的，在开发的时候一律用string，非常方便
 
+# 特殊查询
+
+```sql
+#特殊命令
+
+#查询刚刚insert主键的值
+select @@identity;
+```
+

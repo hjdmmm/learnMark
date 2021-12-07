@@ -102,6 +102,16 @@ where必搭配if使用，会自动屏蔽第一个if条件前的and
 
 数组增加查询条件
 
+### selectKey
+
+只是insert的子标签，用来在插入后马上给传入对象中的属性赋值(如作为自动递增主键的id等)
+
+resultType属性
+
+keyProperty属性 ：对象属性
+
+order属性：mysql在插入sql执行后才生成主键，填AFTER；Oracle反之
+
 ## resultMap
 
 当数据库字段名称与domain类属性名称不一样时，可以给数据库字段名称起别名；或者使用resultMap标签(与增删改查标签同级，都在mapper管辖下)，
@@ -327,6 +337,16 @@ where name like '%'空格#{value}空格'%'，空格绝对不能省，这是mybat
 
 resultMap和resultType二选一
 
+---
+
+还有一个很重要的用途
+
+一对多时，Country类中有Set< Minister >类型名为ministers的属性，查询时要多表联查给他赋值就需要用上resultMap
+
+多对一时，Minister类中有Country类型名为country的属性，查询时要多表联查给他赋值也需要用上resultMap
+
+详情见多表联查
+
 # 列名和属性名不一致
 
 1. 使用列名
@@ -393,4 +413,86 @@ select * from student where id in (1001, 1002, 1003)
 
 1. maven加依赖
 2. mybatis主配置文件中在environments标签前加入plugins标签
+
+# 多表联查
+
+## 一对多
+
+一个国家很多个大臣
+
+用resultMap的collection
+
+```xml
+<resultMap type="com.hjdmmm.domain.Country" id="countryMapper">
+    <id column="cid" property="cid"/>
+    <result column="cname" property="cname"/>
+    <collection property="ministers" ofType="com.hjdmmm.domain.Minister">
+    	<id column="mid" property="mid"/>
+        <result column="mname" property="mname"/>
+    </collection>
+</resultMap>
+<select id="selectCountryAndMinister" resultMap="countryMapper">
+    select cid,cname,mid,mname from tbl_country join tbl_minister on countryId=cid
+</select>
+
+
+<!--另一个版本的resultMap-->
+<resultMap type="com.hjdmmm.domain.Country" id="countryMapper2">
+    <id column="cid" property="cid"/>
+    <result column="cname" property="cname"/>
+    <collection property="ministers" ofType="com.hjdmmm.domain.Minister"
+                select="selectMinisterBycountryId" column="cid"/>
+</resultMap>
+
+<select id="selectCountryAndMinister2" resultMap="countryMapper2">
+    select cid,cname from tbl_country
+</select>
+<select id="selectMinisterBycountryId" resultType="com.hjdmmm.domain.Minister">
+    select mid,mname from tbl_minister where countryId=#{cid}
+</select>
+```
+
+## 多对一
+
+多个大臣服务一个国家
+
+```xml
+<resultMap type="com.hjdmmm.domain.Minister" id="ministerMapper">
+    <id column="mid" property="mid"/>
+    <result column="mname" property="mname"/>
+    <association property="country" javaType="com.hjdmmm.domain.Country">
+    	<id column="cid" property="cid"/>
+        <result column="cname" property="cname"/>
+    </association>
+</resultMap>
+<select id="selectMinister" resultMap="ministerMapper">
+    select cid,cname,mid,mname from tbl_minister join tbl_country on countryId=cid
+</select>
+
+
+<!--另一个版本的resultMap-->
+<resultMap type="com.hjdmmm.domain.Minister" id="ministerMapper2">
+    <id column="mid" property="mid"/>
+    <result column="mname" property="mname"/>
+    <association property="country" javaType="com.hjdmmm.domain.Country"
+                 select="selectCountryById" column="countryId"/>
+</resultMap>
+
+<select id="selectMinister2" resultMap="ministerMapper2">
+    select mid,mname,countryId from tbl_minister
+</select>
+<select id="selectCountryById" resultType="com.hjdmmm.domain.Country">
+    select cid,cname from tbl_country where cid=#{cid}
+</select>
+```
+
+## 延迟加载
+
+mybatis主配置文件中的settings下的设置，对性能提升不大
+
+# 注解式开发
+
+@Insert，@delete，@Update，@Select
+
+都只有一个String[] value()，接收sql语句
 
